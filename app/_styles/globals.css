@@ -31,9 +31,24 @@
 }
 
 /* For data picker */
-.rdp {
-  --rdp-cell-size: 32px !important;
-  --rdp-accent-color: theme('colors.accent.500') !important;
-  --rdp-background-color: theme('colors.accent.600') !important;
-  margin: 0 !important;
+@layer utilities {
+  :root {
+    --rdp-cell-size: 40px;
+    --rdp-accent-color: theme('colors.accent.500');
+    --rdp-background-color: theme('colors.accent.600');
+  }
+  
+  .rdp {
+    margin: 0;
+  }
+  
+  .rdp-day_selected, 
+  .rdp-day_selected:hover {
+    background-color: var(--rdp-accent-color);
+    color: white;
+  }
+  
+  .rdp-day_range_middle {
+    background-color: theme('colors.accent.100');
+  }
 }

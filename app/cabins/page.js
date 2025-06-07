@@ -1,14 +1,20 @@
 import Cabinlist from "@/app/_components/Cabinlist";
 import { Suspense } from "react";
 import Spinner from "@/app/_components/Spinner";
-
+import Filter from "@/app/_components/Filter";
+import ReservationReminder from "@/app/_components/ReservationReminder"
 export const revalidate = 3600;
 
 export const metadata = {
   title: "Cabins",
 };
 
-export default function Page() {
+export default async function Page({ searchParams }) {
+  const resolvedSearchParams = await searchParams;
+  console.log("searchparams:", resolvedSearchParams);
+
+  const filter = resolvedSearchParams?.capacity ?? "all";
+
   return (
     <div>
       <h1 className="text-4xl mb-5 text-accent-400 font-medium">
@@ -23,8 +29,13 @@ export default function Page() {
         Welcome to paradise.
       </p>
 
-      <Suspense fallback={<Spinner />}>
-        <Cabinlist />
+      <div className="flex justify-end mb-8">
+        <Filter />
+      </div>
+
+      <Suspense fallback={<Spinner />} key={filter}>
+        <Cabinlist filter={filter} />
+        <ReservationReminder/>
       </Suspense>
     </div>
   );
