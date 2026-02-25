@@ -3,6 +3,7 @@
 import { differenceInDays } from "date-fns";
 import { useReservation } from "./ReservationContext";
 import { createBooking } from "../_lib/actions";
+import Image from "next/image";
 import SubmitButton from "./SubmitButton";
 
 function ReservationForm({ cabin, user }) {
@@ -33,12 +34,14 @@ function ReservationForm({ cabin, user }) {
 
         <div className="flex gap-4 items-center">
           {user.image && (
-            <img
+            <Image
               // Important to display google profile images
               referrerPolicy="no-referrer"
-              className="h-8 rounded-full"
+              className="h-8 w-8 rounded-full"
               src={user.image}
               alt={user.name}
+              width={32}
+              height={32}
             />
           )}
           <p>{user.name}</p>
