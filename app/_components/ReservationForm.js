@@ -7,7 +7,8 @@ import SubmitButton from "./SubmitButton";
 
 function ReservationForm({ cabin, user }) {
   const { range, resetRange } = useReservation();
-  const { maxCapacity, regularPrice, discount, id } = cabin;
+  const { maxCapacity, regularPrice, discount, id, _id } = cabin;
+  const cabinId = id ?? _id;
 
   const startDate = range.from;
   const endDate = range.to;
@@ -20,7 +21,7 @@ function ReservationForm({ cabin, user }) {
     endDate,
     numNights,
     cabinPrice,
-    cabinId: id,
+    cabinId,
   };
 
   const createBookingWithData = createBooking.bind(null, bookingData);
@@ -31,13 +32,15 @@ function ReservationForm({ cabin, user }) {
         <p>Logged in as</p>
 
         <div className="flex gap-4 items-center">
-          <img
-            // Important to display google profile images
-            referrerPolicy="no-referrer"
-            className="h-8 rounded-full"
-            src={user.image}
-            alt={user.name}
-          />
+          {user.image && (
+            <img
+              // Important to display google profile images
+              referrerPolicy="no-referrer"
+              className="h-8 rounded-full"
+              src={user.image}
+              alt={user.name}
+            />
+          )}
           <p>{user.name}</p>
         </div>
       </div>

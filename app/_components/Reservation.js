@@ -7,12 +7,12 @@ import ReservationForm from "./ReservationForm";
 async function Reservation({ cabin }) {
   const [settings, bookedDates] = await Promise.all([
     getSettings(),
-    getBookedDatesByCabinId(cabin.id),
+    getBookedDatesByCabinId(cabin.id ?? cabin._id),
   ]);
   const session = await auth();
 
   return (
-    <div className="grid grid-cols-2 border border-primary-800 min-h-[400px]">
+    <div className="grid grid-cols-1 md:grid-cols-2 border border-primary-800 min-h-[400px]">
       <DateSelector
         settings={settings}
         bookedDates={bookedDates}

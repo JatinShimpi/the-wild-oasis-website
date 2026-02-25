@@ -8,9 +8,9 @@ export const metadata = {
 
 export default function Page() {
   return (
-    <div className="grid grid-cols-5 gap-x-24 gap-y-32 text-lg items-center">
-      <div className="col-span-3">
-        <h1 className="text-4xl mb-10 text-accent-400 font-medium">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-x-12 md:gap-x-24 gap-y-16 md:gap-y-32 text-lg items-center">
+      <div className="md:col-span-3">
+        <h1 className="text-3xl md:text-4xl mb-6 md:mb-10 text-accent-400 font-medium">
           Welcome to The Wild Oasis
         </h1>
 
@@ -36,7 +36,7 @@ export default function Page() {
         </div>
       </div>
 
-      <div className="col-span-2">
+      <div className="md:col-span-2">
         <Image
           src={about1}
           alt="Family sitting around a fire pit in front of cabin"
@@ -47,7 +47,7 @@ export default function Page() {
         <Image src={about2} alt="Family that manages The Wild Oasis" />
       </div> */}
 
-      <div className="col-span-2 relative aspect-square">
+      <div className="md:col-span-2 relative aspect-square">
         <Image
           src="/about-2.jpg"
           fill
@@ -56,8 +56,8 @@ export default function Page() {
         />
       </div>
 
-      <div className="col-span-3">
-        <h1 className="text-4xl mb-10 text-accent-400 font-medium">
+      <div className="md:col-span-3">
+        <h1 className="text-3xl md:text-4xl mb-6 md:mb-10 text-accent-400 font-medium">
           Managed by our family since 1962
         </h1>
 

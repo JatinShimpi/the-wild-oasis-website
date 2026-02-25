@@ -1,145 +1,92 @@
 import { eachDayOfInterval } from "date-fns";
-import { supabase } from "./supabase";
 
-/////////////
-// GET
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-export async function getCabin(id) {
-  const { data, error } = await supabase
-    .from("cabins")
-    .select("*")
-    .eq("id", id)
-    .single();
+// Helper function for API calls
+async function apiRequest(endpoint, options = {}) {
+  // Dynamically import auth to avoid circular dependency issues if any
+  const { auth } = await import("./auth");
+  const session = await auth();
 
-  // For testing
-  // await new Promise((res) => setTimeout(res, 1000));
+  const url = `${API_BASE_URL}${endpoint}`;
+  const headers = {
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
 
-  if (error) {
-    console.error(error);
+  if (session?.accessToken) {
+    headers["Authorization"] = `Bearer ${session.accessToken}`;
   }
 
-  return data;
+  const response = await fetch(url, {
+    ...options,
+    headers,
+    cache: options.cache || "no-store",
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || `API request failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.data;
+}
+
+/////////////
+// GET - Cabins
+
+export async function getCabin(id) {
+  return apiRequest(`/cabins/${id}`);
 }
 
 export async function getCabinPrice(id) {
-  const { data, error } = await supabase
-    .from("cabins")
-    .select("regularPrice, discount")
-    .eq("id", id)
-    .single();
-
-  if (error) {
-    console.error(error);
-  }
-
-  return data;
+  return apiRequest(`/cabins/${id}/price`);
 }
 
 export const getCabins = async function () {
-  const { data, error } = await supabase
-    .from("cabins")
-    .select("id, name, maxCapacity, regularPrice, discount, image")
-    .order("name");
-
-  if (error) {
-    console.error(error);
-    throw new Error("Cabins could not be loaded");
-  }
-
-  return data;
+  return apiRequest("/cabins");
 };
 
-// Guests are uniquely identified by their email address
-export async function getGuest(email) {
-  const { data, error } = await supabase
-    .from("guests")
-    .select("*")
-    .eq("email", email)
-    .single();
+/////////////
+// GET - Guests
 
-  // No error here! We handle the possibility of no guest in the sign in callback
+export async function getGuest(email) {
+  // Used for internal checks or if we need to fetch guest data specifically
+  const data = await apiRequest(`/guests?email=${encodeURIComponent(email)}`);
   return data;
 }
 
+/////////////
+// GET - Bookings
+
 export async function getBooking(id) {
-  const { data, error, count } = await supabase
-    .from("bookings")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error) {
-    console.error(error);
-    throw new Error("Booking could not get loaded");
-  }
-
-  return data;
+  return apiRequest(`/bookings/${id}`);
 }
 
 export async function getBookings(guestId) {
-  const { data, error, count } = await supabase
-    .from("bookings")
-    // We actually also need data on the cabins as well. But let's ONLY take the data that we actually need, in order to reduce downloaded data.
-    .select(
-      "id, created_at, startDate, endDate, numNights, numGuests, totalPrice, guestId, cabinId, cabins(name, image)"
-    )
-    .eq("guestId", guestId)
-    .order("startDate");
-
-  if (error) {
-    console.error(error);
-    throw new Error("Bookings could not get loaded");
-  }
-
-  return data;
+  const allBookings = await apiRequest(`/bookings?guestId=${guestId}`);
+  return allBookings.data || allBookings;
 }
 
 export async function getBookedDatesByCabinId(cabinId) {
-  let today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
-  today = today.toISOString();
-
-  // Getting all bookings
-  const { data, error } = await supabase
-    .from("bookings")
-    .select("*")
-    .eq("cabinId", cabinId)
-    .or(`startDate.gte.${today},status.eq.checked-in`);
-
-  if (error) {
-    console.error(error);
-    throw new Error("Bookings could not get loaded");
-  }
-
-  // Converting to actual dates to be displayed in the date picker
-  const bookedDates = data
-    .map((booking) => {
-      return eachDayOfInterval({
-        start: new Date(booking.startDate),
-        end: new Date(booking.endDate),
-      });
-    })
-    .flat();
-
-  return bookedDates;
+  const bookedDates = await apiRequest(`/cabins/${cabinId}/booked-dates`);
+  return bookedDates.map((date) => new Date(date));
 }
+
+/////////////
+// GET - Settings
 
 export async function getSettings() {
-  const { data, error } = await supabase.from("settings").select("*").single();
-
-  if (error) {
-    console.error(error);
-    throw new Error("Settings could not be loaded");
-  }
-
-  return data;
+  return apiRequest("/settings");
 }
+
+/////////////
+// GET - Countries (external API)
 
 export async function getCountries() {
   try {
-    const res = await fetch(
-      "https://restcountries.com/v2/all?fields=name,flag"
-    );
+    const res = await fetch("https://restcountries.com/v2/all?fields=name,flag");
     const countries = await res.json();
     return countries;
   } catch {
@@ -151,75 +98,43 @@ export async function getCountries() {
 // CREATE
 
 export async function createGuest(newGuest) {
-  const { data, error } = await supabase.from("guests").insert([newGuest]);
-
-  if (error) {
-    console.error(error);
-    throw new Error("Guest could not be created");
-  }
-
-  return data;
+  // Note: Registration is primarily handled via Google Login now. 
+  // This might be used for manual creation if we ever add it.
+  return apiRequest("/guests", {
+    method: "POST",
+    body: JSON.stringify(newGuest),
+  });
 }
 
 export async function createBooking(newBooking) {
-  const { data, error } = await supabase
-    .from("bookings")
-    .insert([newBooking])
-    // So that the newly created object gets returned!
-    .select()
-    .single();
-
-  if (error) {
-    console.error(error);
-    throw new Error("Booking could not be created");
-  }
-
-  return data;
+  return apiRequest("/bookings", {
+    method: "POST",
+    body: JSON.stringify(newBooking),
+  });
 }
 
 /////////////
 // UPDATE
 
-// The updatedFields is an object which should ONLY contain the updated data
 export async function updateGuest(id, updatedFields) {
-  const { data, error } = await supabase
-    .from("guests")
-    .update(updatedFields)
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error(error);
-    throw new Error("Guest could not be updated");
-  }
-  return data;
+  return apiRequest(`/guests/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(updatedFields),
+  });
 }
 
 export async function updateBooking(id, updatedFields) {
-  const { data, error } = await supabase
-    .from("bookings")
-    .update(updatedFields)
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
-    console.error(error);
-    throw new Error("Booking could not be updated");
-  }
-  return data;
+  return apiRequest(`/bookings/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(updatedFields),
+  });
 }
 
 /////////////
 // DELETE
 
 export async function deleteBooking(id) {
-  const { data, error } = await supabase.from("bookings").delete().eq("id", id);
-
-  if (error) {
-    console.error(error);
-    throw new Error("Booking could not be deleted");
-  }
-  return data;
+  return apiRequest(`/bookings/${id}`, {
+    method: "DELETE",
+  });
 }
